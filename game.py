@@ -286,7 +286,7 @@ def broadcast_round_results():
 
     if not game_over:
         start_new_round()
-        socketio.sleep(0.1)
+        socketio.sleep(6)
         socketio.emit("round_start", build_round_state())
 
 

@@ -218,6 +218,20 @@ header .round-info span {
     text-align: left;
 }
 
+.next-round-timer {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 1.1rem;
+    color: var(--primary);
+    font-weight: 600;
+    animation: pulse-timer 1s ease-in-out infinite;
+}
+
+@keyframes pulse-timer {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+}
+
 .leaderboard h3 {
     font-size: .9rem;
     color: var(--muted);

@@ -57,6 +57,8 @@
         </div>
 
         <div class="leaderboard" id="leaderboard"></div>
+
+        <p class="next-round-timer" id="nextRoundTimer"></p>
     </div>
 
     <!-- ==================== GAME OVER ==================== -->
@@ -193,6 +195,20 @@
                 });
 
                 renderLeaderboard('leaderboard', data.leaderboard);
+
+                // 5-second countdown to next round
+                let remaining = 5;
+                const timerEl = document.getElementById('nextRoundTimer');
+                timerEl.textContent = `Next round in ${remaining}s…`;
+                const countdownInterval = setInterval(() => {
+                    remaining--;
+                    if (remaining <= 0) {
+                        clearInterval(countdownInterval);
+                        timerEl.textContent = 'Starting…';
+                    } else {
+                        timerEl.textContent = `Next round in ${remaining}s…`;
+                    }
+                }, 1000);
             }, 600);
         }
 
