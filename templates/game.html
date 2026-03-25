@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Dungeon – Classroom Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/game.css') }}">
+</head>
+<body>
+    <header>
+        <h1>🏰 Magic Dungeon</h1>
+        <p class="round-info">Round <span id="roundNum">-</span> &middot; Dungeon progress: <span id="myProgress">0</span>/{{ total_dungeons }}</p>
+    </header>
+
+    <!-- ==================== PLAYING PHASE ==================== -->
+    <div class="game-card" id="playingCard">
+        <h2 id="dungeonTitle">Choose your exit!</h2>
+        <p class="prompt">Pick a direction to escape the dungeon</p>
+
+        <div class="directions" id="dirButtons">
+            {% for d in directions %}
+            <button class="dir-btn" data-dir="{{ d }}">
+                <span class="dir-emoji">
+                    {% if d == 'front' %}⬆️{% elif d == 'back' %}⬇️{% elif d == 'left' %}⬅️{% else %}➡️{% endif %}
+                </span>
+                {{ d | capitalize }}
+            </button>
+            {% endfor %}
+        </div>
+
+        <div class="answer-status" id="answerStatus"></div>
+
+        <!-- shown after player sends answer, while waiting for others -->
+        <div class="waiting-overlay hidden" id="waitingOverlay">
+            <div class="check">✅</div>
+            <p>Answer sent! Waiting for others<span class="dots"></span></p>
+        </div>
+    </div>
+
+    <!-- ==================== RESULTS PHASE ==================== -->
+    <div class="game-card hidden" id="resultsCard">
+        <div class="results-section">
+            <h3>Round <span id="resRound">-</span> Results</h3>
+            <p class="correct-answer">Correct exit: <span id="correctExit">-</span></p>
+
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Player</th>
+                        <th>Choice</th>
+                        <th>Progress</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+
+        <div class="leaderboard" id="leaderboard"></div>
+    </div>
+
+    <!-- ==================== GAME OVER ==================== -->
+    <div class="game-card hidden" id="gameOverCard">
+        <div class="game-over">
+            <div class="trophy">🏆</div>
+            <h2>Game Over!</h2>
+            <p class="winner-name" id="winnerName"></p>
+            <div class="leaderboard final-standings" id="finalStandings"></div>
+            <a href="/" class="back-btn">Back to Home</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        const PLAYER_NAME    = "{{ player_name }}";
+        const TOTAL_DUNGEONS = {{ total_dungeons }};
+        const DIR_EMOJIS     = { front: '⬆️', back: '⬇️', left: '⬅️', right: '➡️' };
+
+        // ---- Elements ----
+        const playingCard    = document.getElementById('playingCard');
+        const resultsCard    = document.getElementById('resultsCard');
+        const gameOverCard   = document.getElementById('gameOverCard');
+        const dirButtons     = document.querySelectorAll('.dir-btn');
+        const waitingOverlay = document.getElementById('waitingOverlay');
+        const answerStatus   = document.getElementById('answerStatus');
+        const roundNum       = document.getElementById('roundNum');
+        const myProgress     = document.getElementById('myProgress');
+
+        let hasAnswered = false;
+        let myCurrentProgress = 0;
+
+        // ---- Socket.IO ----
+        const socket = io();
+
+        socket.on('connect', () => {
+            socket.emit('rejoin_game', { name: PLAYER_NAME });
+        });
+
+        // ---- Round start ----
+        socket.on('round_start', (data) => {
+            // If player already finished all dungeons, just watch
+            if (myCurrentProgress >= TOTAL_DUNGEONS) {
+                return;
+            }
+
+            hasAnswered = false;
+            roundNum.textContent = data.round;
+            myProgress.textContent = (data.scores[PLAYER_NAME] || 0);
+            myCurrentProgress = data.scores[PLAYER_NAME] || 0;
+
+            // Show playing card, hide results
+            playingCard.classList.remove('hidden');
+            resultsCard.classList.add('hidden');
+            gameOverCard.classList.add('hidden');
+            waitingOverlay.classList.add('hidden');
+
+            // Enable buttons
+            dirButtons.forEach(btn => {
+                btn.disabled = false;
+                btn.classList.remove('selected');
+            });
+
+            answerStatus.innerHTML = '';
+        });
+
+        // ---- Answer status (who answered so far) ----
+        socket.on('answer_status', (data) => {
+            if (data.total_active === 0) return;
+            answerStatus.innerHTML =
+                `<span class="highlight">${data.total_answered}</span> / ${data.total_active} players answered`;
+        });
+
+        // ---- Round results ----
+        socket.on('round_results', (data) => {
+            // Update own progress
+            const me = data.results.find(r => r.name === PLAYER_NAME);
+            if (me) {
+                myCurrentProgress = me.progress;
+                myProgress.textContent = me.progress;
+            }
+
+            if (data.game_over) {
+                showGameOver(data);
+                return;
+            }
+
+            showResults(data);
+        });
+
+        // ---- Click direction ----
+        dirButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (hasAnswered) return;
+                hasAnswered = true;
+
+                const dir = btn.dataset.dir;
+                btn.classList.add('selected');
+                dirButtons.forEach(b => b.disabled = true);
+                waitingOverlay.classList.remove('hidden');
+
+                socket.emit('submit_answer', { direction: dir });
+            });
+        });
+
+        // ---- Show results ----
+        function showResults(data) {
+            // Small delay so the "waiting" feels natural
+            setTimeout(() => {
+                playingCard.classList.add('hidden');
+                resultsCard.classList.remove('hidden');
+
+                document.getElementById('resRound').textContent = data.round;
+                document.getElementById('correctExit').textContent =
+                    DIR_EMOJIS[data.correct_exit] + ' ' + capitalize(data.correct_exit);
+
+                const tbody = document.getElementById('resultsBody');
+                tbody.innerHTML = '';
+
+                data.results.forEach(r => {
+                    const tr = document.createElement('tr');
+                    tr.className = r.correct ? 'correct-row' : 'wrong-row';
+                    const isMe = r.name === PLAYER_NAME;
+                    tr.innerHTML = `
+                        <td>${r.correct
+                            ? '<span class="icon-correct">✓</span>'
+                            : '<span class="icon-wrong">✗</span>'}</td>
+                        <td>${esc(r.name)}${isMe ? ' <small style="color:var(--primary)">(you)</small>' : ''}</td>
+                        <td class="choice">${DIR_EMOJIS[r.choice] || ''} ${capitalize(r.choice)}</td>
+                        <td>${r.progress}/${TOTAL_DUNGEONS}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                renderLeaderboard('leaderboard', data.leaderboard);
+            }, 600);
+        }
+
+        // ---- Game over ----
+        function showGameOver(data) {
+            setTimeout(() => {
+                playingCard.classList.add('hidden');
+                resultsCard.classList.add('hidden');
+                gameOverCard.classList.remove('hidden');
+
+                const winner = data.finished[0] || 'Nobody';
+                document.getElementById('winnerName').textContent =
+                    '👑 ' + winner + ' escaped first!';
+
+                renderLeaderboard('finalStandings', data.leaderboard);
+            }, 600);
+        }
+
+        // ---- Leaderboard renderer ----
+        function renderLeaderboard(containerId, lb) {
+            const el = document.getElementById(containerId);
+            let html = '<h3>Leaderboard</h3>';
+            lb.forEach((p, i) => {
+                const pct = Math.min((p.progress / TOTAL_DUNGEONS) * 100, 100);
+                const done = p.progress >= TOTAL_DUNGEONS;
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+                html += `
+                    <div class="lb-item">
+                        <span class="lb-rank">${medal}</span>
+                        <span class="lb-name">${esc(p.name)}${p.name === PLAYER_NAME ? ' <small style="color:var(--primary)">(you)</small>' : ''}</span>
+                        <span class="lb-progress">${p.progress}/${TOTAL_DUNGEONS}</span>
+                        <div class="lb-bar-wrap">
+                            <div class="lb-bar ${done ? 'done' : ''}" style="width:${pct}%"></div>
+                        </div>
+                    </div>`;
+            });
+            el.innerHTML = html;
+        }
+
+        // ---- Helpers ----
+        function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+        function esc(t) {
+            const d = document.createElement('div');
+            d.textContent = t;
+            return d.innerHTML;
+        }
+    </script>
+</body>
+</html>

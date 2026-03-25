@@ -1,0 +1,120 @@
+:root {
+    --bg: #0f0e17;
+    --surface: #1a1a2e;
+    --primary: #e6a020;
+    --primary-glow: rgba(230, 160, 32, .3);
+    --text: #e0e0e0;
+    --muted: #888;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card {
+    background: var(--surface);
+    border-radius: 1.2rem;
+    padding: 3rem 2.5rem;
+    text-align: center;
+    max-width: 420px;
+    width: 90%;
+    box-shadow: 0 0 40px rgba(0, 0, 0, .5);
+}
+
+.emoji { font-size: 3.5rem; margin-bottom: .6rem; }
+
+h1 {
+    font-size: 1.8rem;
+    color: var(--primary);
+    text-shadow: 0 0 20px var(--primary-glow);
+    margin-bottom: .4rem;
+}
+
+.subtitle {
+    color: var(--muted);
+    font-size: .95rem;
+    margin-bottom: 2rem;
+}
+
+label {
+    display: block;
+    text-align: left;
+    font-size: .85rem;
+    color: var(--muted);
+    margin-bottom: .4rem;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: .75rem 1rem;
+    border: 2px solid #2a2a4a;
+    border-radius: .6rem;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color .2s;
+}
+
+input[type="text"]:focus {
+    border-color: var(--primary);
+}
+
+input[type="text"]::placeholder {
+    color: #555;
+}
+
+.btn {
+    margin-top: 1.5rem;
+    width: 100%;
+    padding: .85rem;
+    border: none;
+    border-radius: .6rem;
+    background: var(--primary);
+    color: var(--bg);
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .2s;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px var(--primary-glow);
+}
+
+.btn:active { transform: translateY(0); }
+
+.btn:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.lobby-status {
+    margin-top: 1.2rem;
+    font-size: .85rem;
+    color: var(--muted);
+}
+
+.lobby-status .count {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.lobby-status.full {
+    color: #e74c3c;
+}
+
+.lobby-status.full .count {
+    color: #e74c3c;
+}

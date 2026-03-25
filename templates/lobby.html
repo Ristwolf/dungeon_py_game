@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lobby – Classroom Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/lobby.css') }}">
+</head>
+<body>
+    <header>
+        <h1>🎮 Game Lobby</h1>
+        <p class="greeting">Welcome, <span id="myName">{{ player_name }}</span></p>
+    </header>
+
+    <div class="lobby">
+        <div class="lobby-header">
+            <h2>Players</h2>
+            <div class="player-count"><span id="count">0</span> / {{ max_players }}</div>
+        </div>
+
+        <div class="progress-wrap">
+            <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
+            <p class="progress-label" id="progressLabel">Need at least <span class="highlight">{{ min_players }}</span> players to start</p>
+        </div>
+
+        <ul class="player-list" id="playerList">
+            <li class="empty" id="emptyMsg">Connecting…</li>
+        </ul>
+
+        <p class="waiting">Waiting for players<span class="dots"></span></p>
+    </div>
+
+    <a href="/" class="leave-btn">← Leave lobby</a>
+
+    <button class="start-btn" id="startBtn" disabled>Start Game ⚔️</button>
+
+    <!-- Socket.IO client (served automatically by Flask-SocketIO) -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        const PLAYER_NAME  = "{{ player_name }}";
+        const MIN_PLAYERS  = {{ min_players }};
+        const MAX_PLAYERS  = {{ max_players }};
+
+        // Colour palette for avatars
+        const COLORS = [
+            '#e6a020', '#e74c3c', '#2ecc71', '#3498db',
+            '#9b59b6', '#1abc9c', '#e67e22', '#e84393',
+            '#00cec9', '#fd79a8', '#6c5ce7', '#fdcb6e',
+        ];
+
+        function hashColor(name) {
+            let h = 0;
+            for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) | 0;
+            return COLORS[Math.abs(h) % COLORS.length];
+        }
+
+        // ---- Socket.IO ----
+        const socket = io();
+
+        socket.on('connect', () => {
+            socket.emit('player_join', { name: PLAYER_NAME });
+        });
+
+        socket.on('lobby_full', () => {
+            alert('The lobby is full! Try again later.');
+            window.location.href = '/';
+        });
+
+        socket.on('game_started', () => {
+            window.location.href = '/game';
+        });
+
+        socket.on('game_already_started', () => {
+            alert('A game is already in progress.');
+            window.location.href = '/';
+        });
+
+        // -- Start Game button --
+        const startBtn = document.getElementById('startBtn');
+        startBtn.addEventListener('click', () => {
+            socket.emit('start_game');
+        });
+
+        socket.on('update_players', (data) => {
+            const players = data.players;
+            const count   = data.count;
+            const ready   = data.ready;
+            const full    = data.full;
+
+            // -- Counter --
+            document.getElementById('count').textContent = count;
+
+            // -- Progress bar --
+            const fill  = document.getElementById('progressFill');
+            const label = document.getElementById('progressLabel');
+            const pct   = Math.min((count / MAX_PLAYERS) * 100, 100);
+            fill.style.width = pct + '%';
+            fill.classList.toggle('ready', ready);
+
+            if (full) {
+                label.innerHTML = '<span class="ready-highlight">Lobby full!</span>';
+            } else if (ready) {
+                label.innerHTML = `<span class="ready-highlight">✓ Ready to play!</span> (${count}/${MAX_PLAYERS})`;
+            } else {
+                const need = MIN_PLAYERS - count;
+                label.innerHTML = `Need <span class="highlight">${need}</span> more player${need !== 1 ? 's' : ''} to start`;
+            }
+
+            // -- Waiting text --
+            const waitingEl = document.querySelector('.waiting');
+            waitingEl.style.display = ready ? 'none' : '';
+
+            // -- Start button --
+            startBtn.disabled = !ready;
+
+            // -- Player list --
+            const list = document.getElementById('playerList');
+
+            if (count === 0) {
+                list.innerHTML = '<li class="empty">No one here yet…</li>';
+                return;
+            }
+
+            list.innerHTML = '';
+            players.forEach(p => {
+                const li  = document.createElement('li');
+                const isMe = p.name === PLAYER_NAME;
+                li.className = 'player-item' + (isMe ? ' you' : '');
+
+                const color = hashColor(p.name);
+                const initial = p.name.charAt(0).toUpperCase();
+
+                li.innerHTML = `
+                    <div class="avatar" style="background:${color}">${initial}</div>
+                    <span class="player-name">${escapeHtml(p.name)}</span>
+                    ${isMe ? '<span class="you-tag">you</span>' : ''}
+                `;
+                list.appendChild(li);
+            });
+        });
+
+        function escapeHtml(text) {
+            const d = document.createElement('div');
+            d.textContent = text;
+            return d.innerHTML;
+        }
+    </script>
+</body>
+</html>

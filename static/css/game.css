@@ -1,0 +1,329 @@
+:root {
+    --bg: #0f0e17;
+    --surface: #1a1a2e;
+    --primary: #e6a020;
+    --primary-glow: rgba(230, 160, 32, .3);
+    --success: #2ecc71;
+    --danger: #e74c3c;
+    --text: #e0e0e0;
+    --muted: #888;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem 3rem;
+}
+
+/* ---- Header ---- */
+header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+header h1 {
+    font-size: 1.6rem;
+    color: var(--primary);
+    text-shadow: 0 0 20px var(--primary-glow);
+}
+
+header .round-info {
+    color: var(--muted);
+    margin-top: .3rem;
+    font-size: .9rem;
+}
+
+header .round-info span {
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* ---- Game card ---- */
+.game-card {
+    background: var(--surface);
+    border-radius: 1.2rem;
+    padding: 2rem 2.5rem;
+    max-width: 560px;
+    width: 100%;
+    box-shadow: 0 0 40px rgba(0, 0, 0, .5);
+    text-align: center;
+}
+
+.game-card h2 {
+    font-size: 1.1rem;
+    margin-bottom: .3rem;
+}
+
+.game-card .prompt {
+    color: var(--muted);
+    font-size: .9rem;
+    margin-bottom: 1.5rem;
+}
+
+/* ---- Direction buttons ---- */
+.directions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .8rem;
+    margin-bottom: 1.5rem;
+}
+
+.dir-btn {
+    padding: 1rem;
+    border: 2px solid #2a2a4a;
+    border-radius: .7rem;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .2s, background .2s, transform .15s;
+}
+
+.dir-btn:hover:not(:disabled) {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.dir-btn.selected {
+    border-color: var(--primary);
+    background: rgba(230, 160, 32, .15);
+    color: var(--primary);
+}
+
+.dir-btn:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.dir-btn .dir-emoji {
+    display: block;
+    font-size: 1.5rem;
+    margin-bottom: .2rem;
+}
+
+/* ---- Answer status ---- */
+.answer-status {
+    font-size: .85rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    min-height: 1.2em;
+}
+
+.answer-status .highlight {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* ---- Waiting overlay ---- */
+.waiting-overlay {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: .95rem;
+}
+
+.waiting-overlay .check {
+    font-size: 2rem;
+    margin-bottom: .5rem;
+}
+
+.waiting-overlay .dots::after {
+    content: '';
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%  { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+}
+
+/* ---- Results table ---- */
+.results-section {
+    animation: fadeIn .4s ease;
+}
+
+.results-section h3 {
+    font-size: 1rem;
+    margin-bottom: .3rem;
+}
+
+.correct-answer {
+    font-size: .85rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+}
+
+.correct-answer span {
+    color: var(--success);
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .9rem;
+    margin-bottom: 1.2rem;
+}
+
+.results-table th {
+    text-align: left;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    padding: .5rem .6rem;
+    border-bottom: 1px solid #2a2a4a;
+}
+
+.results-table td {
+    padding: .55rem .6rem;
+    border-bottom: 1px solid #1a1a2e;
+}
+
+.results-table tr.correct-row {
+    background: rgba(46, 204, 113, .08);
+}
+
+.results-table tr.wrong-row {
+    background: rgba(231, 76, 60, .06);
+}
+
+.results-table .icon-correct { color: var(--success); }
+.results-table .icon-wrong   { color: var(--danger); }
+
+.results-table .choice {
+    text-transform: capitalize;
+}
+
+.next-round-btn {
+    display: none;  /* hidden by default; shown via JS after results */
+}
+
+/* ---- Leaderboard ---- */
+.leaderboard {
+    margin-top: 1.5rem;
+    text-align: left;
+}
+
+.leaderboard h3 {
+    font-size: .9rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: .6rem;
+}
+
+.lb-item {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .45rem .6rem;
+    border-radius: .4rem;
+    font-size: .85rem;
+}
+
+.lb-item:nth-child(even) {
+    background: rgba(255, 255, 255, .02);
+}
+
+.lb-rank {
+    width: 1.5rem;
+    text-align: center;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.lb-name {
+    flex: 1;
+}
+
+.lb-progress {
+    color: var(--muted);
+    font-size: .8rem;
+}
+
+.lb-bar-wrap {
+    width: 80px;
+    height: 6px;
+    background: var(--bg);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.lb-bar {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--primary);
+    transition: width .4s ease;
+}
+
+.lb-bar.done {
+    background: var(--success);
+}
+
+/* ---- Game Over ---- */
+.game-over {
+    text-align: center;
+    animation: fadeIn .5s ease;
+}
+
+.game-over .trophy { font-size: 3rem; margin-bottom: .5rem; }
+
+.game-over h2 {
+    color: var(--primary);
+    font-size: 1.5rem;
+    margin-bottom: .3rem;
+}
+
+.game-over .winner-name {
+    font-size: 1.2rem;
+    color: var(--success);
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+.game-over .final-standings {
+    text-align: left;
+    margin-top: 1rem;
+}
+
+.back-btn {
+    display: inline-block;
+    margin-top: 1.5rem;
+    padding: .7rem 1.5rem;
+    border: none;
+    border-radius: .6rem;
+    background: var(--primary);
+    color: var(--bg);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform .15s, box-shadow .2s;
+}
+
+.back-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px var(--primary-glow);
+}
+
+/* ---- Utility ---- */
+.hidden { display: none !important; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}

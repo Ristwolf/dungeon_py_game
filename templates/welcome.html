@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/welcome.css') }}">
+</head>
+<body>
+    <div class="card">
+        <div class="emoji">🎮</div>
+        <h1>Classroom Game</h1>
+        <p class="subtitle">Enter your name to join the session</p>
+
+        <form action="/join" method="POST" id="joinForm">
+            <label for="name">Your name</label>
+            <input
+                type="text"
+                id="name"
+                name="name"
+                placeholder="e.g. Maria"
+                maxlength="24"
+                autocomplete="off"
+                autofocus
+                required
+            />
+            <button class="btn" type="submit" id="joinBtn" disabled>
+                Join Session →
+            </button>
+        </form>
+
+        <p class="lobby-status" id="lobbyStatus"></p>
+    </div>
+
+    <script>
+        const nameInput    = document.getElementById('name');
+        const joinBtn      = document.getElementById('joinBtn');
+        const lobbyStatus  = document.getElementById('lobbyStatus');
+
+        let lobbyFull = false;
+
+        nameInput.addEventListener('input', updateBtn);
+
+        function updateBtn() {
+            joinBtn.disabled = nameInput.value.trim().length === 0 || lobbyFull;
+            joinBtn.textContent = lobbyFull ? 'Lobby Full' : 'Join Session →';
+        }
+
+        async function pollStatus() {
+            try {
+                const res  = await fetch('/api/status');
+                const data = await res.json();
+                lobbyFull = data.full || data.started;
+
+                lobbyStatus.classList.toggle('full', data.full || data.started);
+
+                if (data.started) {
+                    lobbyStatus.innerHTML =
+                        'A game is already in progress. Please wait.';
+                } else if (data.full) {
+                    lobbyStatus.innerHTML =
+                        `Lobby is full (<span class="count">${data.count}/${data.max}</span>)`;
+                } else {
+                    lobbyStatus.innerHTML =
+                        `<span class="count">${data.count}/${data.max}</span> players in lobby`;
+                }
+
+                updateBtn();
+            } catch (e) { /* ignore fetch errors */ }
+        }
+
+        pollStatus();
+        setInterval(pollStatus, 3000);
+    </script>
+</body>
+</html>
