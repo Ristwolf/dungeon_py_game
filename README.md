@@ -43,11 +43,7 @@ pip install flask flask-socketio
 python game.py
 ```
 
-Open **http://localhost:5000** in your browser.
-
-### Playing over a network
-
-Share your local IP (e.g. `http://192.168.x.x:5000`) with your class so everyone can join from their own device.
+Open **https://ristwolf.com.br/py_dungeon** in your browser.
 
 ---
 
