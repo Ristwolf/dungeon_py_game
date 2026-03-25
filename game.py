@@ -21,6 +21,27 @@ import random
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
 
+
+# ---------------------------------------------------------------------------
+# Reverse-proxy middleware – reads X-Script-Name header set by nginx so that
+# url_for() automatically prepends the sub-path (e.g. /py_dungeon).
+# ---------------------------------------------------------------------------
+class ReverseProxied:
+    def __init__(self, wsgi_app):
+        self.wsgi_app = wsgi_app
+
+    def __call__(self, environ, start_response):
+        script_name = environ.get("HTTP_X_SCRIPT_NAME", "")
+        if script_name:
+            environ["SCRIPT_NAME"] = script_name
+            path_info = environ.get("PATH_INFO", "")
+            if path_info.startswith(script_name):
+                environ["PATH_INFO"] = path_info[len(script_name):]
+        return self.wsgi_app(environ, start_response)
+
+
+app.wsgi_app = ReverseProxied(app.wsgi_app)
+
 socketio = SocketIO(app)
 
 # ---------------------------------------------------------------------------

@@ -30,7 +30,7 @@
         <p class="waiting">Waiting for players<span class="dots"></span></p>
     </div>
 
-    <a href="/" class="leave-btn">← Leave lobby</a>
+    <a href="{{ url_for('welcome') }}" class="leave-btn">← Leave lobby</a>
 
     <button class="start-btn" id="startBtn" disabled>Start Game ⚔️</button>
 
@@ -55,7 +55,8 @@
         }
 
         // ---- Socket.IO ----
-        const socket = io();
+        const SCRIPT_NAME = '{{ request.script_root }}';
+        const socket = io({ path: SCRIPT_NAME + '/socket.io/' });
 
         socket.on('connect', () => {
             socket.emit('player_join', { name: PLAYER_NAME });
@@ -63,16 +64,16 @@
 
         socket.on('lobby_full', () => {
             alert('The lobby is full! Try again later.');
-            window.location.href = '/';
+            window.location.href = SCRIPT_NAME + '/';
         });
 
         socket.on('game_started', () => {
-            window.location.href = '/game';
+            window.location.href = SCRIPT_NAME + '/game';
         });
 
         socket.on('game_already_started', () => {
             alert('A game is already in progress.');
-            window.location.href = '/';
+            window.location.href = SCRIPT_NAME + '/';
         });
 
         // -- Start Game button --

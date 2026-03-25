@@ -66,7 +66,7 @@
             <h2>Game Over!</h2>
             <p class="winner-name" id="winnerName"></p>
             <div class="leaderboard final-standings" id="finalStandings"></div>
-            <a href="/" class="back-btn">Back to Home</a>
+            <a href="{{ url_for('welcome') }}" class="back-btn">Back to Home</a>
         </div>
     </div>
 
@@ -90,7 +90,8 @@
         let myCurrentProgress = 0;
 
         // ---- Socket.IO ----
-        const socket = io();
+        const SCRIPT_NAME = '{{ request.script_root }}';
+        const socket = io({ path: SCRIPT_NAME + '/socket.io/' });
 
         socket.on('connect', () => {
             socket.emit('rejoin_game', { name: PLAYER_NAME });
