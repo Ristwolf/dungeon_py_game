@@ -49,7 +49,7 @@ socketio = SocketIO(app)
 # ---------------------------------------------------------------------------
 MIN_PLAYERS = 3
 MAX_PLAYERS = 20
-TOTAL_DUNGEONS = 5
+TOTAL_DUNGEONS = 3
 DIRECTIONS = ["front", "back", "left", "right"]
 
 # ---------------------------------------------------------------------------
@@ -271,7 +271,7 @@ def broadcast_round_results():
         key=lambda x: -x["progress"]
     )
 
-    game_over = all(p["progress"] >= TOTAL_DUNGEONS
+    game_over = any(p["progress"] >= TOTAL_DUNGEONS
                     for p in players.values())
 
     socketio.emit("round_results", {
