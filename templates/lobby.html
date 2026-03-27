@@ -76,6 +76,10 @@
             window.location.href = SCRIPT_NAME + '/';
         });
 
+        socket.on('game_reset', () => {
+            window.location.href = SCRIPT_NAME + '/';
+        });
+
         // -- Start Game button --
         const startBtn = document.getElementById('startBtn');
         startBtn.addEventListener('click', () => {

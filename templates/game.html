@@ -68,6 +68,8 @@
             <h2>Game Over!</h2>
             <p class="winner-name" id="winnerName"></p>
             <div class="leaderboard final-standings" id="finalStandings"></div>
+            <p class="restart-timer" id="restartTimer"></p>
+            <button class="back-btn" id="restartBtn" style="margin-bottom:0.5rem;cursor:pointer;border:none;font-size:inherit;">🔄 Restart Game Now</button>
             <a href="{{ url_for('welcome') }}" class="back-btn">Back to Home</a>
         </div>
     </div>
@@ -224,6 +226,20 @@
                     '👑 ' + winner + ' escaped first!';
 
                 renderLeaderboard('finalStandings', data.leaderboard);
+
+                // Auto-restart countdown
+                let restartSecs = 15;
+                const timerEl = document.getElementById('restartTimer');
+                timerEl.textContent = `Game resets automatically in ${restartSecs}s…`;
+                const restartInterval = setInterval(() => {
+                    restartSecs--;
+                    if (restartSecs <= 0) {
+                        clearInterval(restartInterval);
+                        timerEl.textContent = 'Resetting…';
+                    } else {
+                        timerEl.textContent = `Game resets automatically in ${restartSecs}s…`;
+                    }
+                }, 1000);
             }, 600);
         }
 
@@ -247,6 +263,15 @@
             });
             el.innerHTML = html;
         }
+
+        // ---- Restart game ----
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            socket.emit('restart_game');
+        });
+
+        socket.on('game_reset', () => {
+            window.location.href = SCRIPT_NAME + '/';
+        });
 
         // ---- Helpers ----
         function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }

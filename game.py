@@ -47,10 +47,11 @@ socketio = SocketIO(app)
 # ---------------------------------------------------------------------------
 # Game settings
 # ---------------------------------------------------------------------------
-MIN_PLAYERS = 3
+MIN_PLAYERS = 2
 MAX_PLAYERS = 20
 TOTAL_DUNGEONS = 3
 DIRECTIONS = ["front", "back", "left", "right"]
+AUTO_RESTART_SECONDS = 15
 
 # ---------------------------------------------------------------------------
 # In-memory state  (resets every time the server restarts)
@@ -63,6 +64,16 @@ game = {
     "answers": {},                     # sid -> direction chosen
     "finished_players": [],            # names in finishing order
 }
+
+
+def reset_game():
+    """Reset all game state so a new game can start."""
+    players.clear()
+    game["started"] = False
+    game["current_round"] = 0
+    game["correct_exit"] = None
+    game["answers"] = {}
+    game["finished_players"] = []
 
 
 # ---------------------------------------------------------------------------
@@ -170,6 +181,13 @@ def handle_start_game():
 
     start_new_round()
     emit("game_started", {}, broadcast=True)
+
+
+@socketio.on("restart_game")
+def handle_restart_game():
+    """Allow anyone to force-reset the game (useful for the teacher)."""
+    reset_game()
+    emit("game_reset", {"message": "Game has been reset!"}, broadcast=True)
 
 
 # ---------------------------------------------------------------------------
@@ -288,6 +306,11 @@ def broadcast_round_results():
         start_new_round()
         socketio.sleep(6)
         socketio.emit("round_start", build_round_state())
+    else:
+        # Auto-reset after a countdown so new games can start
+        socketio.sleep(AUTO_RESTART_SECONDS)
+        reset_game()
+        socketio.emit("game_reset", {"message": "Game has been reset. Return to lobby to play again!"})
 
 
 def build_round_state() -> dict:
